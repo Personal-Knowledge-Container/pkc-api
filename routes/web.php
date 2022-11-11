@@ -16,3 +16,12 @@
 $router->get('/', function () use ($router) {
     return $router->app->version();
 });
+
+// Read page listing by keyword
+$router->get('/page', 'MediawikiController@page_listing');
+
+// Read page by Title
+$router->get('/page/title', 'MediawikiController@page_by_title');
+
+// Read page by id
+$router->get('/page/id', 'MediawikiController@page_by_id');
