@@ -25,3 +25,6 @@ $router->get('/page/title', 'MediawikiController@page_by_title');
 
 // Read page by id
 $router->get('/page/id', 'MediawikiController@page_by_id');
+
+// Create new page
+$router->post('/page/create', 'MediawikiController@create_new_page');
