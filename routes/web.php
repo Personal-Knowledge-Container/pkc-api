@@ -17,6 +17,9 @@ $router->get('/', function () use ($router) {
     return $router->app->version();
 });
 
+// My entry point for development
+$router->get('/mw_info','MediawikiController@mediawiki_getinfo');
+
 // Read page listing by keyword
 $router->get('/page', 'MediawikiController@page_listing');
 
@@ -28,3 +31,6 @@ $router->get('/page/id', 'MediawikiController@page_by_id');
 
 // Create new page
 $router->post('/page/create', 'MediawikiController@create_new_page');
+
+// Product Related
+$router->post('/product/create', 'MediawikiController@create_new_product');

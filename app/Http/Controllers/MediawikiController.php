@@ -25,6 +25,27 @@ class MediawikiController extends Controller
         $cookie_file = "/tmp/cookie.txt";
     }
 
+    public function mediawiki_getinfo(request $request){
+        $keyword = $request->get('keyword');
+        $api_url = env('APP_URL', true);
+        $api_key = env('APP_KEY', true);
+
+        // API Token from client get request
+        $client_api_key = $request->header('api-key');
+        if ($api_key == $client_api_key){
+
+            // $cors_site = explode(',', env('ALLOWED_CORS'));
+            $cors_site = $request->header();
+
+            return $this->successResponse($cors_site, Response::HTTP_OK);
+        }
+        else {
+
+            // wrong api-key
+            return $this->errorResponse('API-KEY Invalid', Response::HTTP_UNAUTHORIZED);
+        }
+    }
+
     public function page_listing(request $request)
     {
 
@@ -162,9 +183,6 @@ class MediawikiController extends Controller
 
     public function create_new_page(request $request){
         // sample bot user
-        // Muhammad.haviz@muhammad.haviz
-        // p3ii3bbb3jgskh32os7sfkaduk8clr0f
-
         $api_key = env('APP_KEY', true);
         $api_url = env('APP_URL', true);
 
@@ -183,35 +201,89 @@ class MediawikiController extends Controller
         // title
         $page_title = $request->input('title');
 
+        // creates cookie file
         $this->cookie_file = "/tmp/".$this->random_filename(32,"/tmp","txt");
 
-
-        $login_Token = $this->getLoginToken();                     // Step 1
-        $this->loginRequest( $login_Token );                       // Step 2
-        $csrf_Token = $this->getCSRFToken();                       // Step 3
-        // $outResponse = $this->editRequest($csrf_Token);         // Step 4
-        $outResponse = $this->addRequest($csrf_Token, $page_title, $page_text);
+        // start performing create page sequence
+        $login_Token = $this->getLoginToken();                                           // Step 1
+        $this->loginRequest( $login_Token, $bot_user, $bot_pass );                       // Step 2
+        $csrf_Token = $this->getCSRFToken();                                             // Step 3
+        $response = $this->addRequest($csrf_Token, $page_title, $page_text);             // Step 4, create the page
 
         // remove cookie file
         unlink($this->cookie_file);
         
-        // echo "CSRF Token:".$csrf_Token;
+        $outResponse = json_decode($response);
         return $this->successResponse($outResponse, Response::HTTP_OK);
     }
 
-    public function create_new_page_by_template(request $request){
+    public function create_new_product(request $request){
+        // sample bot user
         $api_key = env('APP_KEY', true);
-        
+        $api_url = env('APP_URL', true);
+
         // API Token from client get request
         $client_api_key = $request->header('api-key');
-        if ($api_key == $client_api_key){
-            // put code here
 
-        }
-        else {
-            // wrong api-key
-            return $this->errorResponse('API-KEY Invalid', Response::HTTP_UNAUTHORIZED);
-        }   
+        // mediawiki bot user id
+        $bot_user =  $request->input('bot-user');
+
+        // mediawiki bot password
+        $bot_pass = $request->input('bot-password');
+
+        // prepare text from template
+        $s_page_text = '{{LKPP/Product';
+        $s_page_text = $s_page_text.'|product-name='.$request->input('product-name');
+        $s_page_text = $s_page_text.'|product-stock-keep-unit='.$request->input('product-stock-keep-unit');
+        $s_page_text = $s_page_text.'|unit-price='.$request->input('unit-price');
+        $s_page_text = $s_page_text.'|stock-on-hand='.$request->input('stock-on-hand');
+        $s_page_text = $s_page_text.'|picture-name='.$request->input('picture-name');
+        $s_page_text = $s_page_text.'|product-picture-caption='.$request->input('product-picture-caption');
+        $s_page_text = $s_page_text.'|end-of-product-date='.$request->input('end-of-product-date');
+        $s_page_text = $s_page_text.'|brand='.$request->input('brand');
+        $s_page_text = $s_page_text.'|product-vendor-code='.$request->input('product-vendor-code');
+        $s_page_text = $s_page_text.'|uom='.$request->input('uom');
+        $s_page_text = $s_page_text.'|kind-of-product='.$request->input('kind-of-product');
+        $s_page_text = $s_page_text.'|kbki-code='.$request->input('kbki-code');
+        $s_page_text = $s_page_text.'|tkdn-value='.$request->input('tkdn-value');
+        $s_page_text = $s_page_text.'|bmp-value='.$request->input('bmp-value');
+        $s_page_text = $s_page_text.'|sum-of-tkdn-bmp='.$request->input('sum-of-tkdn-bmp');
+        $s_page_text = $s_page_text.'|certificate-owner-identifier='.$request->input('certificate-owner-identifier');
+        $s_page_text = $s_page_text.'|kind-of-tkdn-product='.$request->input('kind-of-tkdn-product');
+        $s_page_text = $s_page_text.'|product-specific-info='.$request->input('product-specific-info');        
+        $s_page_text = $s_page_text.'|}}';
+
+        // title
+        $page_title = 'LKPP:Product:'.$request->input('title');
+
+        // creates cookie file
+        $this->cookie_file = "/tmp/".$this->random_filename(32,"/tmp","txt");
+
+        // start performing create page sequence
+        $login_Token = $this->getLoginToken();                                           // Step 1
+        $this->loginRequest( $login_Token, $bot_user, $bot_pass );                       // Step 2
+        $csrf_Token = $this->getCSRFToken();                                             // Step 3
+        $response = $this->addRequest($csrf_Token, $page_title, $s_page_text);             // Step 4, create the page
+
+        // remove cookie file
+        unlink($this->cookie_file);
+        
+        $outResponse = json_decode($response);
+        return $this->successResponse($outResponse, Response::HTTP_OK);        
+    }
+
+    public function replicate_page(request $request){
+
+        $source_url;
+        $source_page_title;
+        // https://pkc-lkpp.dev/api.php?action=parse&format=json&page=ECatalogue Smart Contract Logic Model
+        $url = $source_url.'?action=parse&format=json&page='.$source_page_title;
+
+        $ch = curl_init($url);
+        curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
+        $c = curl_exec($ch);
+        echo $c->parse->text;
+
     }
 
     /*
@@ -266,14 +338,15 @@ class MediawikiController extends Controller
         return $result["query"]["tokens"]["logintoken"];
     }
 
-    function loginRequest( $logintoken ) {
+    function loginRequest( $logintoken, $lgname, $lgpass ) {
+     // $this->loginRequest( $login_Token, $bot_user, $bot_pass );  
 
         $endPoint = env('APP_URL', true);;
 
         $params2 = [
             "action" => "login",
-            "lgname" => "Muhammad.haviz@muhammad.haviz",
-            "lgpassword" => "p3ii3bbb3jgskh32os7sfkaduk8clr0f",
+            "lgname" => $lgname,
+            "lgpassword" => $lgpass,
             "lgtoken" => $logintoken,
             "format" => "json"
         ];
@@ -290,7 +363,7 @@ class MediawikiController extends Controller
         $output = curl_exec( $ch );
         curl_close( $ch );
 
-        echo( $output );
+        // echo( $output );
     }
 
     // Step 3: Get CSRF Token
@@ -370,7 +443,8 @@ class MediawikiController extends Controller
         $output = curl_exec( $ch );
         curl_close( $ch );
 
-        echo ( $output );
+        // echo ( $output );
+        return $output;
     }
 
 
