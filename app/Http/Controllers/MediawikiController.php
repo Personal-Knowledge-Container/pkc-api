@@ -204,17 +204,136 @@ class MediawikiController extends Controller
         // creates cookie file
         $this->cookie_file = "/tmp/".$this->random_filename(32,"/tmp","txt");
 
-        // start performing create page sequence
-        $login_Token = $this->getLoginToken();                                           // Step 1
-        $this->loginRequest( $login_Token, $bot_user, $bot_pass );                       // Step 2
-        $csrf_Token = $this->getCSRFToken();                                             // Step 3
-        $response = $this->addRequest($csrf_Token, $page_title, $page_text);             // Step 4, create the page
+        // API Token from client get request
+        $client_api_key = $request->header('api-key');
+        if ($api_key == $client_api_key){
+            // start performing create page sequence
+            $login_Token = $this->getLoginToken();                                           // Step 1
+            $this->loginRequest( $login_Token, $bot_user, $bot_pass );                       // Step 2
+            $csrf_Token = $this->getCSRFToken();                                             // Step 3
+            $response = $this->addRequest($csrf_Token, $page_title, $page_text);             // Step 4, create the page
 
-        // remove cookie file
-        unlink($this->cookie_file);
+            // remove cookie file
+            unlink($this->cookie_file);
+            
+            $outResponse = json_decode($response);
+            return $this->successResponse($outResponse, Response::HTTP_OK);
+        }
+        else {
+            // wrong api-key
+            return $this->errorResponse('API-KEY Invalid', Response::HTTP_UNAUTHORIZED);
+        }   
+
+    }
+
+    public function create_new_contract(request $request){
+        // sample bot user
+        $api_key = env('APP_KEY', true);
+        $api_url = env('APP_URL', true);
+
+        // API Token from client get request
+        $client_api_key = $request->header('api-key');
+
+        // mediawiki bot user id
+        $bot_user =  $request->input('bot-user');
+
+        // mediawiki bot password
+        $bot_pass = $request->input('bot-password');
         
-        $outResponse = json_decode($response);
-        return $this->successResponse($outResponse, Response::HTTP_OK);
+        // prepare text from template
+        $s_page_text = '{{LKPP/Contract';
+        $s_page_text = $s_page_text.'|order-number='.$request->input('order-number');
+        $s_page_text = $s_page_text.'|user-signature='.$request->input('user-signature');
+        $s_page_text = $s_page_text.'|po-page-name='.$request->input('order-number');
+        $s_page_text = $s_page_text.'|}}';
+        $s_page_text = $s_page_text.'{{:'.$request->input('order-number').'}}';
+
+        // title
+        $page_title = 'LKPP:Contract:'.time().'/'.$request->input('order-number');
+
+        // creates cookie file
+        $this->cookie_file = "/tmp/".$this->random_filename(32,"/tmp","txt");
+
+        // API Token from client get request
+        $client_api_key = $request->header('api-key');
+        if ($api_key == $client_api_key){
+            // start performing create page sequence
+            $login_Token = $this->getLoginToken();                                              // Step 1
+            $this->loginRequest( $login_Token, $bot_user, $bot_pass );                          // Step 2
+            $csrf_Token = $this->getCSRFToken();                                                // Step 3
+            $response = $this->addRequest($csrf_Token, $page_title, $s_page_text);              // Step 4, create the page
+
+            // remove cookie file
+            unlink($this->cookie_file);
+            
+            $outResponse = json_decode($response);
+            return $this->successResponse($outResponse, Response::HTTP_OK);      
+        }   
+        else{
+            // wrong api-key
+            return $this->errorResponse('API-KEY Invalid', Response::HTTP_UNAUTHORIZED);
+        }         
+
+    }
+
+    public function create_new_po(request $request){
+        // sample bot user
+        $api_key = env('APP_KEY', true);
+        $api_url = env('APP_URL', true);
+
+        // API Token from client get request
+        $client_api_key = $request->header('api-key');
+
+        // mediawiki bot user id
+        $bot_user =  $request->input('bot-user');
+
+        // mediawiki bot password
+        $bot_pass = $request->input('bot-password');
+
+        // calculation
+        $sub_total = $request->input('qty') * $request->input('unit-price');
+        $grand_total = $sub_total;
+
+        // prepare text from template
+        $s_page_text = '{{LKPP/Purchase Order';
+        $s_page_text = $s_page_text.'|order-number='.$request->input('order-number');
+        $s_page_text = $s_page_text.'|order-by-org='.$request->input('order-by-org');
+        $s_page_text = $s_page_text.'|order-by-name='.$request->input('order-by-name');
+        $s_page_text = $s_page_text.'|order-date='.$request->input('order-date');
+        $s_page_text = $s_page_text.'|product-name='.$request->input('product-name');
+        $s_page_text = $s_page_text.'|product-page='.$request->input('product-page');
+        $s_page_text = $s_page_text.'|qty='.$request->input('qty');
+        $s_page_text = $s_page_text.'|unit-price='.$request->input('unit-price');
+        $s_page_text = $s_page_text.'|sub-total='.$sub_total;
+        $s_page_text = $s_page_text.'|grand-total='.$grand_total;
+        $s_page_text = $s_page_text.'|}}';
+
+        // title
+        $page_title = 'LKPP:Purchase Order:'.time().'/'.$request->input('product-name');
+
+        // creates cookie file
+        $this->cookie_file = "/tmp/".$this->random_filename(32,"/tmp","txt");
+
+        // API Token from client get request
+        $client_api_key = $request->header('api-key');
+        if ($api_key == $client_api_key){
+            // start performing create page sequence
+            $login_Token = $this->getLoginToken();                                           // Step 1
+            $this->loginRequest( $login_Token, $bot_user, $bot_pass );                       // Step 2
+            $csrf_Token = $this->getCSRFToken();                                             // Step 3
+            $response = $this->addRequest($csrf_Token, $page_title, $s_page_text);           // Step 4, create the page
+
+            // remove cookie file
+            unlink($this->cookie_file);
+            
+            $outResponse = json_decode($response);
+            return $this->successResponse($outResponse, Response::HTTP_OK);      
+        }   
+        else{
+            // wrong api-key
+            return $this->errorResponse('API-KEY Invalid', Response::HTTP_UNAUTHORIZED);
+        } 
+
     }
 
     public function create_new_product(request $request){
@@ -229,7 +348,7 @@ class MediawikiController extends Controller
         $bot_user =  $request->input('bot-user');
 
         // mediawiki bot password
-        $bot_pass = $request->input('bot-password');
+        $bot_pass = $request->input('bot-password'); 
 
         // prepare text from template
         $s_page_text = '{{LKPP/Product';
@@ -259,17 +378,156 @@ class MediawikiController extends Controller
         // creates cookie file
         $this->cookie_file = "/tmp/".$this->random_filename(32,"/tmp","txt");
 
-        // start performing create page sequence
-        $login_Token = $this->getLoginToken();                                           // Step 1
-        $this->loginRequest( $login_Token, $bot_user, $bot_pass );                       // Step 2
-        $csrf_Token = $this->getCSRFToken();                                             // Step 3
-        $response = $this->addRequest($csrf_Token, $page_title, $s_page_text);             // Step 4, create the page
+        // API Token from client get request
+        $client_api_key = $request->header('api-key');
+        if ($api_key == $client_api_key){
+            // start performing create page sequence
+            $login_Token = $this->getLoginToken();                                           // Step 1
+            $this->loginRequest( $login_Token, $bot_user, $bot_pass );                       // Step 2
+            $csrf_Token = $this->getCSRFToken();                                             // Step 3
+            $response = $this->addRequest($csrf_Token, $page_title, $s_page_text);             // Step 4, create the page
 
-        // remove cookie file
-        unlink($this->cookie_file);
-        
-        $outResponse = json_decode($response);
-        return $this->successResponse($outResponse, Response::HTTP_OK);        
+            // remove cookie file
+            unlink($this->cookie_file);
+            
+            $outResponse = json_decode($response);
+            return $this->successResponse($outResponse, Response::HTTP_OK);      
+        }   
+        else{
+            // wrong api-key
+            return $this->errorResponse('API-KEY Invalid', Response::HTTP_UNAUTHORIZED);
+        }       
+    }
+
+    public function create_delivery_proof(request $request){
+        // sample bot user
+        $api_key = env('APP_KEY', true);
+        $api_url = env('APP_URL', true);
+
+        // API Token from client get request
+        $client_api_key = $request->header('api-key');
+
+        // mediawiki bot user id
+        $bot_user =  $request->input('bot-user');
+
+        // mediawiki bot password
+        $bot_pass = $request->input('bot-password');
+
+        // title
+        $page_title = 'LKPP:Delivery Proof:'.time().'/'.$request->input('contract-ref-number');
+
+        // prepare text from template
+        $s_page_text = '{{LKPP/Delivery Proof';
+        $s_page_text = $s_page_text.'|delivery-proof-number='.$page_title;
+        $s_page_text = $s_page_text.'|contract-ref-number='.$request->input('contract-ref-number');
+        $s_page_text = $s_page_text.'|product-name='.$request->input('product-name');
+        $s_page_text = $s_page_text.'|qty='.$request->input('qty');
+        $s_page_text = $s_page_text.'|qty-delivered='.$request->input('qty-delivered');
+        $s_page_text = $s_page_text.'|delivery-date='.$request->input('delivery-date');
+        $s_page_text = $s_page_text.'|}}';
+
+        $s_page_text = $s_page_text.'{{:'.$request->input('contract-ref-number').'}}';
+
+        // creates cookie file
+        $this->cookie_file = "/tmp/".$this->random_filename(32,"/tmp","txt");
+
+        // API Token from client get request
+        $client_api_key = $request->header('api-key');
+        if ($api_key == $client_api_key){
+            // start performing create page sequence
+            $login_Token = $this->getLoginToken();                                           // Step 1
+            $this->loginRequest( $login_Token, $bot_user, $bot_pass );                       // Step 2
+            $csrf_Token = $this->getCSRFToken();                                             // Step 3
+            $response = $this->addRequest($csrf_Token, $page_title, $s_page_text);             // Step 4, create the page
+
+            // remove cookie file
+            unlink($this->cookie_file);
+            
+            $outResponse = json_decode($response);
+            return $this->successResponse($outResponse, Response::HTTP_OK);      
+        }   
+        else{
+            // wrong api-key
+            return $this->errorResponse('API-KEY Invalid', Response::HTTP_UNAUTHORIZED);
+        } 
+
+    }
+
+    public function get_wikitext(request $request){
+        // sample bot user
+        $api_key = env('APP_KEY', true);
+        $api_url = env('APP_URL', true);
+
+        // API Token from client get request
+        $client_api_key = $request->header('api-key');
+
+        // mediawiki bot user id
+        $bot_user =  $request->input('bot-user');
+
+        // mediawiki bot password
+        $bot_pass = $request->input('bot-password');
+
+        $wikitext = $this->get_wiki_text(rawurlencode($request->input('page')));
+        $wikitext = json_decode($wikitext);
+
+        // $subject = "{{Template1 |Parameter1=Text |Parameter2=Text |Parameter3={{Template2|hier|steht|text}} |Parameter4=Text }}";
+        $subject = $wikitext->parse->wikitext;
+
+        return $this->successResponse($wikitext->parse->wikitext, Response::HTTP_OK);
+    }
+
+    public function create_release_payment(request $request){
+        // sample bot user
+        $api_key = env('APP_KEY', true);
+        $api_url = env('APP_URL', true);
+
+        // API Token from client get request
+        $client_api_key = $request->header('api-key');
+
+        // mediawiki bot user id
+        $bot_user =  $request->input('bot-user');
+
+        // mediawiki bot password
+        $bot_pass = $request->input('bot-password');
+
+        // title
+        $page_title = 'LKPP:Payment:'.time().'/'.$request->input('delivery-proof-number');
+
+        // time and date
+        $date = date('Y/m/d H:i:s');
+
+        // prepare text from template
+        $s_page_text = '{{LKPP/Payment';
+        $s_page_text = $s_page_text.'|payment-release-number='.$page_title;
+        $s_page_text = $s_page_text.'|release-user='.$request->input('bot-user');
+        $s_page_text = $s_page_text.'|release-date='.$date;
+        $s_page_text = $s_page_text.'|}}';
+
+        $s_page_text = $s_page_text.'{{:'.$request->input('delivery-proof-number').'}}';
+
+        // creates cookie file
+        $this->cookie_file = "/tmp/".$this->random_filename(32,"/tmp","txt");
+
+        // API Token from client get request
+        $client_api_key = $request->header('api-key');
+        if ($api_key == $client_api_key){
+            // start performing create page sequence
+            $login_Token = $this->getLoginToken();                                           // Step 1
+            $this->loginRequest( $login_Token, $bot_user, $bot_pass );                       // Step 2
+            $csrf_Token = $this->getCSRFToken();                                             // Step 3
+            $response = $this->addRequest($csrf_Token, $page_title, $s_page_text);             // Step 4, create the page
+
+            // remove cookie file
+            unlink($this->cookie_file);
+            
+            $outResponse = json_decode($response);
+            return $this->successResponse($outResponse, Response::HTTP_OK);      
+        }   
+        else{
+            // wrong api-key
+            return $this->errorResponse('API-KEY Invalid', Response::HTTP_UNAUTHORIZED);
+        } 
+
     }
 
     public function replicate_page(request $request){
@@ -445,6 +703,33 @@ class MediawikiController extends Controller
 
         // echo ( $output );
         return $output;
+    }
+
+    function get_wiki_text($page_title){
+
+        $curl = curl_init();
+        $endPoint = env('APP_URL', true);;
+
+        curl_setopt_array($curl, array(
+          // CURLOPT_URL => $endPoint.'?action=parse&format=json&page='.$page_title.'&prop=wikitext&formatversion=2',
+          CURLOPT_URL => 'https://pkc-lkpp.dev/api.php?action=parse&format=json&page=LKPP:Contract:1669037309/LKPP:Purchase%20Order:1669035948/test&prop=wikitext&formatversion=2',
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => '',
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 0,
+          CURLOPT_FOLLOWLOCATION => true,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => 'GET',
+          CURLOPT_HTTPHEADER => array(
+            'Origin: https://qtux.pkc-dev.org'
+          ),
+        ));
+        
+        $response = curl_exec($curl);
+        
+        curl_close($curl);
+        return $response;
+        
     }
 
 

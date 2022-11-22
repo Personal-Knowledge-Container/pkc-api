@@ -34,3 +34,18 @@ $router->post('/page/create', 'MediawikiController@create_new_page');
 
 // Product Related
 $router->post('/product/create', 'MediawikiController@create_new_product');
+
+// create PO
+$router->post('/purchase-order/create', 'MediawikiController@create_new_po');
+
+// create Contract
+$router->post('/contract/create', 'MediawikiController@create_new_contract');
+
+// create delivery proof
+$router->post('/delivery-proof/create', 'MediawikiController@create_delivery_proof');
+
+// release payment
+$router->post('/payment/create', 'MediawikiController@create_release_payment');
+
+// get wiki text
+$router->get('/wikitext/get', 'MediawikiController@get_wikitext');
