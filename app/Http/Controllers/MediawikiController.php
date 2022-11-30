@@ -40,7 +40,7 @@ class MediawikiController extends Controller
             return $this->successResponse($cors_site, Response::HTTP_OK);
         }
         else {
-
+            
             // wrong api-key
             return $this->errorResponse('API-KEY Invalid', Response::HTTP_UNAUTHORIZED);
         }
@@ -71,8 +71,19 @@ class MediawikiController extends Controller
     
             $response = curl_exec($curl);
             curl_close($curl);
+
             $outResponse = json_decode($response);
-            
+
+            // adds images information for each page if exists
+            foreach($outResponse->query->search as $result_item) {
+                // add new element
+                $result_item->test = 'x';
+                echo $result_item->pageid;
+                echo "/n";
+                $x = $this->get_page_image($result_item->pageid);
+                // echo $x;
+            }
+
             if( is_null($outResponse->query)){
                 return $this->successResponse("Data not found", Response::HTTP_OK);
             }
@@ -119,13 +130,11 @@ class MediawikiController extends Controller
             $outResponse = json_decode($response);
             curl_close($curl);
 
-            // echo $response;
-
             if( is_null($outResponse->parse)){
                 return $this->successResponse("Data not found", Response::HTTP_OK);
             }
             else{
-                return $this->successResponse($outResponse->parse, Response::HTTP_OK);
+                return $this->successResponse($outResponse , Response::HTTP_OK);
             }            
             
         }
@@ -164,8 +173,8 @@ class MediawikiController extends Controller
             
             $response = curl_exec($curl);
             curl_close($curl);
+
             $outResponse = json_decode($response);
-            curl_close($curl);
 
             if( is_null($outResponse->parse)){
                 return $this->successResponse("Data not found", Response::HTTP_OK);
@@ -469,9 +478,24 @@ class MediawikiController extends Controller
 
         $wikitext = $this->get_wiki_text(rawurlencode($request->input('page')));
         $wikitext = json_decode($wikitext);
-
-        // $subject = "{{Template1 |Parameter1=Text |Parameter2=Text |Parameter3={{Template2|hier|steht|text}} |Parameter4=Text }}";
         $subject = $wikitext->parse->wikitext;
+
+        $subject = "{{LKPP/Contract|order-number=LKPP:Purchase Order:1669035948/test|user-signature=muhammad.haviz|po-page-name=LKPP:Purchase Order:1669035948/test|}}{{:LKPP:Purchase Order:1669035948/test}}";        
+        preg_match_all("~\{\{\s*(.*?)\s*\}\}~", $subject, $arr_input);
+        
+        // var_dump($arr_input[1]);
+        
+        $arr = [];
+        foreach (explode('|', $arr_input[1][0]) as $item){
+            $parts = explode('=', $item);
+            $arr[trim($parts[0])] = $parts[1];
+        }
+        
+        var_dump($arr);
+
+
+        $tarr = explode('|', $zz[1][1]);
+
 
         return $this->successResponse($wikitext->parse->wikitext, Response::HTTP_OK);
     }
@@ -708,11 +732,11 @@ class MediawikiController extends Controller
     function get_wiki_text($page_title){
 
         $curl = curl_init();
-        $endPoint = env('APP_URL', true);;
+        $endPoint = env('APP_URL', true);
 
         curl_setopt_array($curl, array(
           // CURLOPT_URL => $endPoint.'?action=parse&format=json&page='.$page_title.'&prop=wikitext&formatversion=2',
-          CURLOPT_URL => 'https://pkc-lkpp.dev/api.php?action=parse&format=json&page=LKPP:Contract:1669037309/LKPP:Purchase%20Order:1669035948/test&prop=wikitext&formatversion=2',
+          CURLOPT_URL => 'https://pkc-lkpp.dev/api.php?action=parse&format=json&page='.$page_title.'&prop=wikitext&formatversion=2',
           CURLOPT_RETURNTRANSFER => true,
           CURLOPT_ENCODING => '',
           CURLOPT_MAXREDIRS => 10,
@@ -732,5 +756,35 @@ class MediawikiController extends Controller
         
     }
 
+    function get_page_image($pageid){
+
+        $curl = curl_init();
+        $endPoint = env('APP_URL', true);
+
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => $endPoint.'?action=query&prop=pageimages&format=json&',
+        CURLOPT_URL => $endPoint.'?action=query&format=json&prop=pageimages&pageids='.$pageid,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'GET',
+        CURLOPT_HTTPHEADER => array(
+            'Origin: https://qtux.pkc-dev.org'
+        ),
+        ));
+
+        $response = curl_exec($curl);
+
+        curl_close($curl);
+        echo $response;
+        $outResponse = json_decode($response);
+
+        return $outResponse;
+        
+
+    }
 
 }
